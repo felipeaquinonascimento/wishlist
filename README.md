@@ -68,6 +68,80 @@ spring:
       uri: mongodb://db:27017/wishlist
 ```
 
+## ☸️ Configuração do Kubernetes
+
+1. Iniciar Minikube:
+```bash
+minikube start
+```
+
+2. Iniciar Minikube:
+```bash
+# Configure o Docker no Minikube
+eval $(minikube docker-env)
+
+# Construa a imagem
+./gradlew bootBuildImage --imageName=wishlist-backend:latest
+```
+
+3. Criar namespace:
+```bash
+kubectl create namespace wishlist
+```
+
+4. Aplicar configurações do Kubernetes:
+```bash
+kubectl apply -f k8s/ -n wishlist
+```
+
+5. Listar recursos:
+```bash
+# Pods
+kubectl get pods -n wishlist
+
+# Serviços
+kubectl get services -n wishlist
+```
+
+6. Ver logs de um pod:
+```bash
+kubectl logs <nome-do-pod> -n wishlist
+```
+
+7. Ver logs de um pod:
+```bash
+# Encaminhar porta
+kubectl port-forward <nome-do-pod> 8080:8080 -n wishlist
+
+# Ou usar o serviço do Minikube
+minikube service wishlist-service -n wishlist
+```
+
+## 🔧 Comandos Úteis
+```bash
+# Listar todos os recursos
+kubectl get all -n wishlist
+
+# Descrição detalhada de um recurso
+kubectl describe pod <nome-do-pod> -n wishlist
+
+# Dashboard do Kubernetes
+minikube dashboard
+```
+## 💻 Desinstalar/Limpar
+```bash
+# Deletar todos os recursos
+kubectl delete namespace wishlist
+
+# Parar Minikube
+minikube stop
+
+# Deletar cluster Minikube
+minikube delete
+```
+
+
+
 ## 📄 Licença
 
 Distribuído sob licença MIT. Veja o arquivo `LICENSE` para mais informações.
