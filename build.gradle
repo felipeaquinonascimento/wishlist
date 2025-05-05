@@ -39,6 +39,15 @@ tasks.withType(JavaCompile).configureEach {
 	options.compilerArgs += ['-Xlint:deprecation']
 }
 
+bootBuildImage {
+	docker {
+		publishRegistry {
+			username = "felipedeaquinonascimento"
+			password = "devkotlin02*"
+		}
+	}
+}
+
 bootJar {
 	archiveFileName = 'wishlist.jar'
 	duplicatesStrategy = 'WARN'

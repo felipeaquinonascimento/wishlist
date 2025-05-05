@@ -1,8 +1,15 @@
 spring:
-  data:
-    mongodb:
-      uri: mongodb://localhost:27017/wishlist
-      database: wishlist
+  server:
+    port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+data:
+  mongodb:
+    uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/wishlist}
 logging:
   level:
     root: INFO
