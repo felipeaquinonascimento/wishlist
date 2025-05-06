@@ -140,6 +140,22 @@ minikube stop
 minikube delete
 ```
 
+## Decisões Arquiteturais
+
+### Frameworks e Tecnologias
+- **Spring Boot**: Escolhido pela produtividade e ecossistema robusto
+- **MongoDB**: Flexibilidade para documentos de wishlist
+- **Gradle**: Gerenciamento de dependências mais moderno que Maven
+
+### Padrões Utilizados
+- Clean Architecture
+- Repository Pattern
+- DTO Pattern para desacoplamento
+
+### Considerações de Implementação
+- Limite de 20 produtos por wishlist
+- Tratamento de exceções centralizado
+- Validações de integridade de dados
 
 
 ## 📄 Licença

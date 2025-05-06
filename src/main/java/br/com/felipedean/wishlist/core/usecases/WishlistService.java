@@ -2,12 +2,16 @@ package br.com.felipedean.wishlist.core.usecases;
 
 import br.com.felipedean.wishlist.core.domain.Wishlist;
 import br.com.felipedean.wishlist.core.ports.WishlistRepository;
-import br.com.felipedean.wishlist.core.ports.exceptions.WishlistFullException;
-import br.com.felipedean.wishlist.core.ports.exceptions.WishlistNotFoundException;
+import br.com.felipedean.wishlist.core.ports.exceptions.GlobalExceptionHandler;
+import br.com.felipedean.wishlist.dto.WishlistDTO;
+import br.com.felipedean.wishlist.mapper.WishlistMapper;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import javax.naming.ServiceUnavailableException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,26 +21,27 @@ import java.util.Optional;
 public class WishlistService {
 
     private final WishlistRepository repository;
+    private final WishlistMapper mapper;
 
-    public Wishlist addProductToWishlist(String clientId, String productId) {
-        log.info("Adicionando produto {} para o cliente {}", productId, clientId);
+    @CircuitBreaker(name = "wishlistService", fallbackMethod = "fallbackAddProduct")
+    public WishlistDTO addProductToWishlist(String clientId, String productId) {
         Wishlist wishlist = repository.findByClientId(clientId)
                 .orElse(new Wishlist(clientId));
 
-        if (wishlist.getProductIds().size() < 20) {
-            wishlist.addProduct(productId);
-            Wishlist savedWishlist = repository.save(wishlist);
-            log.info("Produto {} adicionado com sucesso para o cliente {}", productId, clientId);
-            return savedWishlist;
-        } else {
-            log.warn("Limite de produtos excedido para o cliente {}", clientId);
-            throw new WishlistFullException("Wishlist está cheia. Limite máximo de 20 produtos.");
-        }
+        wishlist.addProduct(productId);
+        Wishlist savedWishlist = repository.save(wishlist);
+
+        return mapper.toDTO(savedWishlist);
+    }
+
+    public WishlistDTO fallbackAddProduct(String clientId, String productId, Exception ex) throws ServiceUnavailableException {
+        log.error("Falha ao adicionar produto à wishlist", ex);
+        throw new ServiceUnavailableException("Serviço temporariamente indisponível");
     }
 
     public void removeProductFromWishlist(String clientId, String productId) {
         Wishlist wishlist = repository.findByClientId(clientId)
-                .orElseThrow(() -> new WishlistNotFoundException("Wishlist não encontrada"));
+                .orElseThrow(() -> new GlobalExceptionHandler.WishlistNotFoundException("Wishlist não encontrada"));
 
         wishlist.removeProduct(productId);
         repository.save(wishlist);
@@ -52,7 +57,7 @@ public class WishlistService {
             return wishlist.getProductIds();
         } else {
             log.warn("Nenhuma wishlist encontrada para o cliente: {}", clientId);
-            return List.of();
+            return Collections.emptyList();
         }
     }
 

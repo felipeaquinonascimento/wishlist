@@ -6,12 +6,16 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
-data:
-  mongodb:
-    uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/wishlist}
-logging:
-  level:
-    root: INFO
-    br.com.felipedean.wishlist: DEBUG
-    org.springframework.data.mongodb: DEBUG
+        include:
+          - health
+          - metrics
+          - prometheus
+          - info
+
+  endpoint:
+    health:
+      show-details: always
+
+  health:
+    mongo:
+      enabled: true

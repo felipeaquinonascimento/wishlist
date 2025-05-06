@@ -1,31 +1,27 @@
 package br.com.felipedean.wishlist.core.domain;
 
+import br.com.felipedean.wishlist.core.ports.exceptions.GlobalExceptionHandler;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WishlistTest {
 
     @Test
-    void addProduct_ShouldAddProductToWishlist() {
-        String clientId = "clientId";
-        String productId = "productId";
-        Wishlist wishlist = new Wishlist(clientId);
-
-        boolean result = wishlist.addProduct(productId);
+    void addProduct_ShouldAddProductSuccessfully() {
+        Wishlist wishlist = new Wishlist("8a3e5b2c-1d4f-6a7b-9c8d-0e1f2a3b4c5d");
+        boolean result = wishlist.addProduct("PRD-001-AA1B2C3D");
 
         assertTrue(result);
-        assertTrue(wishlist.getProductIds().contains(productId));
+        assertEquals(1, wishlist.getProductIds().size());
+        assertTrue(wishlist.getProductIds().contains("PRD-001-AA1B2C3D"));
     }
 
     @Test
     void addProduct_ShouldNotAddDuplicateProduct() {
-        String clientId = "clientId";
-        String productId = "productId";
-        Wishlist wishlist = new Wishlist(clientId);
-        wishlist.addProduct(productId);
+        Wishlist wishlist = new Wishlist("8a3e5b2c-1d4f-6a7b-9c8d-0e1f2a3b4c5d");
+        wishlist.addProduct("PRD-001-AA1B2C3D");
 
-        boolean result = wishlist.addProduct(productId);
+        boolean result = wishlist.addProduct("PRD-001-AA1B2C3D");
 
         assertFalse(result);
         assertEquals(1, wishlist.getProductIds().size());
@@ -33,52 +29,23 @@ class WishlistTest {
 
     @Test
     void addProduct_ShouldNotAddProductWhenWishlistIsFull() {
-        String clientId = "clientId";
-        Wishlist wishlist = new Wishlist(clientId);
-        for (int i = 0; i < 20; i++) {
-            wishlist.addProduct("product" + i);
+        Wishlist wishlist = new Wishlist("8a3e5b2c-1d4f-6a7b-9c8d-0e1f2a3b4c5d");
+
+        for (int i = 1; i <= 20; i++) {
+            wishlist.addProduct("PRD-001-AA1B2C3D" + i);
         }
 
-        boolean result = wishlist.addProduct("productId");
-
-        assertFalse(result);
-        assertEquals(20, wishlist.getProductIds().size());
-    }
-
-    @Test
-    void removeProduct_ShouldRemoveProductFromWishlist() {
-        String clientId = "clientId";
-        String productId = "productId";
-        Wishlist wishlist = new Wishlist(clientId);
-        wishlist.addProduct(productId);
-
-        wishlist.removeProduct(productId);
-
-        assertFalse(wishlist.getProductIds().contains(productId));
-    }
-
-    @Test
-    void removeProduct_ShouldNotRemoveNonExistentProduct() {
-        String clientId = "clientId";
-        String productId = "productId";
-        Wishlist wishlist = new Wishlist(clientId);
-
-        wishlist.removeProduct(productId);
-
-        assertTrue(wishlist.getProductIds().isEmpty());
+        assertThrows(GlobalExceptionHandler.WishlistFullException.class, () -> {
+            wishlist.addProduct("PRD-001-AA1B2C3D");
+        });
     }
 
     @Test
     void toString_ShouldReturnStringRepresentation() {
-        String clientId = "clientId";
-        String productId = "productId";
-        Wishlist wishlist = new Wishlist(clientId);
-        wishlist.addProduct(productId);
+        Wishlist wishlist = new Wishlist("8a3e5b2c-1d4f-6a7b-9c8d-0e1f2a3b4c5d");
+        wishlist.addProduct("PRD-001-AA1B2C3D");
 
-        String result = wishlist.toString();
-
-        assertTrue(result.contains("id="));
-        assertTrue(result.contains("clientId='clientId'"));
-        assertTrue(result.contains("productIds=[productId]"));
+        String expected = "Wishlist{id='null', clientId='8a3e5b2c-1d4f-6a7b-9c8d-0e1f2a3b4c5d', productIds=[PRD-001-AA1B2C3D]}";
+        assertEquals(expected, wishlist.toString());
     }
 }

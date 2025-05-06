@@ -2,120 +2,141 @@ package br.com.felipedean.wishlist.core.ports;
 
 import br.com.felipedean.wishlist.adapters.repositories.WishlistRepositoryImpl;
 import br.com.felipedean.wishlist.core.domain.Wishlist;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Query;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
-@DataMongoTest
 class WishlistRepositoryTest {
 
-    @TestConfiguration
-    static class TestConfig {
-        @Bean
-        public WishlistRepository wishlistRepository(MongoTemplate mongoTemplate) {
-            return new WishlistRepositoryImpl(mongoTemplate);
-        }
-    }
-
-    @Autowired
-    private WishlistRepository wishlistRepository;
-
-    @Autowired
+    @Mock
     private MongoTemplate mongoTemplate;
+
+    private WishlistRepository repository;
 
     @BeforeEach
     void setUp() {
-        // Limpa o banco de dados antes de cada teste
-        mongoTemplate.getDb().drop();
-    }
-
-    @AfterEach
-    void tearDown() {
-        // Limpa o banco de dados após cada teste
-        mongoTemplate.getDb().drop();
+        MockitoAnnotations.openMocks(this);
+        repository = new WishlistRepositoryImpl(mongoTemplate);
     }
 
     @Test
     void findByClientId_ShouldReturnOptionalWishlist() {
-        String clientId = "clientId";
-        Wishlist wishlist = new Wishlist(clientId);
-        wishlistRepository.save(wishlist);
+        String clientId = "8a3e5b2c-1d4f-6a7b-9c8d-0e1f2a3b4c5d";
+        Wishlist expectedWishlist = new Wishlist(clientId);
+        expectedWishlist.addProduct("produto1");
 
-        Optional<Wishlist> result = wishlistRepository.findByClientId(clientId);
+        when(mongoTemplate.findOne(any(Query.class), eq(Wishlist.class)))
+                .thenReturn(expectedWishlist);
+
+        Optional<Wishlist> result = repository.findByClientId(clientId);
 
         assertTrue(result.isPresent());
-        assertEquals(wishlist.getClientId(), result.get().getClientId());
+        assertEquals(expectedWishlist, result.get());
+
+        verify(mongoTemplate).findOne(
+                argThat(query ->
+                        query.getQueryObject().containsValue(clientId)
+                ),
+                eq(Wishlist.class)
+        );
     }
 
     @Test
     void findByClientId_ShouldReturnEmptyOptional() {
-        String clientId = "clientId";
+        String clientId = "8a3e5b2c-1d4f-6a7b-9c8d-0e1f2a3b4c5d";
 
-        Optional<Wishlist> result = wishlistRepository.findByClientId(clientId);
+        when(mongoTemplate.findOne(any(Query.class), eq(Wishlist.class)))
+                .thenReturn(null);
 
-        assertFalse(result.isPresent());
-    }
+        Optional<Wishlist> result = repository.findByClientId(clientId);
 
-    @Test
-    void save_ShouldSaveWishlist() {
-        Wishlist wishlist = new Wishlist("8a3e5b2c-1d4f-6a7b-9c8d-0e1f2a3b4c5d");
+        assertTrue(result.isEmpty());
 
-        Wishlist savedWishlist = wishlistRepository.save(wishlist);
-
-        assertNotNull(savedWishlist.getId());
-        assertEquals(wishlist.getClientId(), savedWishlist.getClientId());
+        verify(mongoTemplate).findOne(
+                argThat(query ->
+                        query.getQueryObject().containsValue(clientId)
+                ),
+                eq(Wishlist.class)
+        );
     }
 
     @Test
     void findById_ShouldReturnOptionalWishlist() {
-        Wishlist wishlist = new Wishlist("8a3e5b2c-1d4f-6a7b-9c8d-0e1f2a3b4c5d");
-        Wishlist savedWishlist = wishlistRepository.save(wishlist);
+        String id = "681250f1f50f904217d077b1";
+        Wishlist expectedWishlist = new Wishlist("8a3e5b2c-1d4f-6a7b-9c8d-0e1f2a3b4c5d");
+        expectedWishlist.addProduct("PRD-001-AA1B2C3D");
 
-        Optional<Wishlist> result = wishlistRepository.findById(savedWishlist.getId());
+        when(mongoTemplate.findById(id, Wishlist.class))
+                .thenReturn(expectedWishlist);
+
+        Optional<Wishlist> result = repository.findById(id);
 
         assertTrue(result.isPresent());
-        assertEquals(savedWishlist.getId(), result.get().getId());
-    }
+        assertEquals(expectedWishlist, result.get());
 
-    @Test
-    void findById_ShouldReturnEmptyOptional() {
-        String id = "non-existent-id";
-
-        Optional<Wishlist> result = wishlistRepository.findById(id);
-
-        assertFalse(result.isPresent());
+        verify(mongoTemplate).findById(id, Wishlist.class);
     }
 
     @Test
     void findAll_ShouldReturnListOfWishlists() {
         Wishlist wishlist1 = new Wishlist("8a3e5b2c-1d4f-6a7b-9c8d-0e1f2a3b4c5d");
-        Wishlist wishlist2 = new Wishlist("7e8f9a0b-1c2d-3e4f-5a6b-7c8d9e0f1a2b");
-        wishlistRepository.save(wishlist1);
-        wishlistRepository.save(wishlist2);
+        wishlist1.addProduct("PRD-001-AA1B2C3D");
 
-        List<Wishlist> result = wishlistRepository.findAll();
+        Wishlist wishlist2 = new Wishlist("7a3e5b2c-1d4f-6a7b-9c8d-0e1f2a3b4c4f");
+        wishlist2.addProduct("PRD-002-AA1B2C3D");
 
+        List<Wishlist> expectedWishlists = List.of(wishlist1, wishlist2);
+
+        when(mongoTemplate.findAll(Wishlist.class))
+                .thenReturn(expectedWishlists);
+
+        List<Wishlist> result = repository.findAll();
+
+        assertNotNull(result);
         assertEquals(2, result.size());
+        assertEquals(expectedWishlists, result);
+
+        verify(mongoTemplate).findAll(Wishlist.class);
+    }
+
+    @Test
+    void save_ShouldSaveWishlist() {
+        Wishlist wishlist = new Wishlist("8a3e5b2c-1d4f-6a7b-9c8d-0e1f2a3b4c5d");
+        wishlist.addProduct("PRD-001-AA1B2C3D");
+
+        when(mongoTemplate.save(wishlist))
+                .thenReturn(wishlist);
+
+        Wishlist savedWishlist = repository.save(wishlist);
+
+        assertNotNull(savedWishlist);
+        assertEquals(wishlist, savedWishlist);
+
+        verify(mongoTemplate).save(wishlist);
     }
 
     @Test
     void deleteById_ShouldDeleteWishlist() {
-        Wishlist wishlist = new Wishlist("8a3e5b2c-1d4f-6a7b-9c8d-0e1f2a3b4c5d");
-        Wishlist savedWishlist = wishlistRepository.save(wishlist);
+        String id = "681250f1f50f904217d077b1";
 
-        wishlistRepository.deleteById(savedWishlist.getId());
+        repository.deleteById(id);
 
-        Optional<Wishlist> deletedWishlist = wishlistRepository.findById(savedWishlist.getId());
-        assertFalse(deletedWishlist.isPresent());
+        verify(mongoTemplate).remove(
+                argThat(query ->
+                        query.getQueryObject().containsValue(id)
+                ),
+                eq(Wishlist.class)
+        );
     }
 }

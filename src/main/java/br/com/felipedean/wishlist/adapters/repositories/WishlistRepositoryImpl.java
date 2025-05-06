@@ -22,12 +22,6 @@ public class WishlistRepositoryImpl implements WishlistRepository {
     public Optional<Wishlist> findByClientId(String clientId) {
         Query query = new Query(Criteria.where("clientId").is(clientId));
         Wishlist wishlist = mongoTemplate.findOne(query, Wishlist.class);
-        log.info("Buscando wishlist para clientId: {}", clientId);
-        log.info("Wishlist encontrada: {}", wishlist);
-
-        List<Wishlist> allWishlists = mongoTemplate.findAll(Wishlist.class);
-        log.info("Todas as wishlists no banco: {}", allWishlists);
-
         return Optional.ofNullable(wishlist);
     }
 

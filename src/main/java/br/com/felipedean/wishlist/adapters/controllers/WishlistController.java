@@ -2,6 +2,8 @@ package br.com.felipedean.wishlist.adapters.controllers;
 
 import br.com.felipedean.wishlist.core.domain.Wishlist;
 import br.com.felipedean.wishlist.core.usecases.WishlistService;
+import br.com.felipedean.wishlist.dto.WishlistDTO;
+import br.com.felipedean.wishlist.mapper.WishlistMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,14 +18,15 @@ import java.util.List;
 public class WishlistController {
 
     private final WishlistService wishlistService;
+    private final WishlistMapper wishlistMapper;
 
     @PostMapping("/{clientId}/products/{productId}")
-    public ResponseEntity<Wishlist> addProduct(
+    public ResponseEntity<WishlistDTO> addProduct(
             @PathVariable String clientId,
             @PathVariable String productId
     ) {
-        Wishlist wishlist = wishlistService.addProductToWishlist(clientId, productId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(wishlist);
+        WishlistDTO wishlistDTO = wishlistService.addProductToWishlist(clientId, productId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(wishlistDTO);
     }
 
     @DeleteMapping("/{clientId}/products/{productId}")
@@ -44,11 +47,13 @@ public class WishlistController {
     }
 
     @GetMapping("/{clientId}/products/{productId}")
-    public ResponseEntity<Boolean> checkProductInWishlist(
+    public ResponseEntity<Void> checkProductInWishlist(
             @PathVariable String clientId,
             @PathVariable String productId
     ) {
-        boolean isInWishlist = wishlistService.isProductInWishlist(clientId, productId);
-        return ResponseEntity.ok(isInWishlist);
+        boolean exists = wishlistService.isProductInWishlist(clientId, productId);
+        return exists
+                ? ResponseEntity.ok().build()
+                : ResponseEntity.notFound().build();
     }
 }

@@ -1,9 +1,9 @@
 package br.com.felipedean.wishlist.adapters.controllers;
 
 import br.com.felipedean.wishlist.core.domain.Wishlist;
-import br.com.felipedean.wishlist.core.ports.exceptions.WishlistFullException;
-import br.com.felipedean.wishlist.core.ports.exceptions.WishlistNotFoundException;
+import br.com.felipedean.wishlist.core.ports.exceptions.GlobalExceptionHandler;
 import br.com.felipedean.wishlist.core.usecases.WishlistService;
+import br.com.felipedean.wishlist.dto.WishlistDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -34,25 +34,36 @@ class WishlistControllerTest {
     void addProduct_ShouldReturnCreatedWishlist() {
         String clientId = "8a3e5b2c-1d4f-6a7b-9c8d-0e1f2a3b4c5d";
         String productId = "PRD-001-AA1B2C3D";
+
         Wishlist wishlist = new Wishlist(clientId);
         wishlist.addProduct(productId);
-        when(wishlistService.addProductToWishlist(clientId, productId)).thenReturn(wishlist);
 
-        ResponseEntity<Wishlist> response = wishlistController.addProduct(clientId, productId);
+        WishlistDTO wishlistDTO = new WishlistDTO();
+        wishlistDTO.setClientId(clientId);
+        wishlistDTO.setProductIds(List.of(productId));
+
+        when(wishlistService.addProductToWishlist(clientId, productId)).thenReturn(wishlistDTO);
+
+        ResponseEntity<WishlistDTO> response = wishlistController.addProduct(clientId, productId);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals(wishlist, response.getBody());
+        assertEquals(wishlistDTO, response.getBody());
         verify(wishlistService, times(1)).addProductToWishlist(clientId, productId);
     }
 
     @Test
-    void addProduct_ShouldReturnBadRequestWhenWishlistIsFull() {
+    void addProduct_ShouldThrowExceptionWhenWishlistIsFull() {
+        // Arrange
         String clientId = "8a3e5b2c-1d4f-6a7b-9c8d-0e1f2a3b4c5d";
         String productId = "PRD-021-UU7V8W9X";
-        when(wishlistService.addProductToWishlist(clientId, productId)).thenThrow(WishlistFullException.class);
 
-        assertThrows(WishlistFullException.class, () -> wishlistController.addProduct(clientId, productId));
-        verify(wishlistService, times(1)).addProductToWishlist(clientId, productId);
+        when(wishlistService.addProductToWishlist(clientId, productId))
+                .thenThrow(new GlobalExceptionHandler.WishlistFullException("Wishlist está cheia"));
+
+        // Act & Assert
+        assertThrows(GlobalExceptionHandler.WishlistFullException.class, () -> {
+            wishlistController.addProduct(clientId, productId);
+        });
     }
 
     @Test
@@ -70,9 +81,11 @@ class WishlistControllerTest {
     void removeProduct_ShouldThrowWishlistNotFoundExceptionWhenWishlistDoesNotExist() {
         String clientId = "8a3e5b2c-1d4f-6a7b-9c8d-0e1f2a3b4c5d";
         String productId = "PRD-007-GG9T0U1V";
-        doThrow(WishlistNotFoundException.class).when(wishlistService).removeProductFromWishlist(clientId, productId);
+        doThrow(new GlobalExceptionHandler.WishlistNotFoundException("Wishlist não encontrada"))
+                .when(wishlistService).removeProductFromWishlist(clientId, productId);
 
-        assertThrows(WishlistNotFoundException.class, () -> wishlistController.removeProduct(clientId, productId));
+        assertThrows(GlobalExceptionHandler.WishlistNotFoundException.class,
+                () -> wishlistController.removeProduct(clientId, productId));
         verify(wishlistService, times(1)).removeProductFromWishlist(clientId, productId);
     }
 
@@ -90,28 +103,26 @@ class WishlistControllerTest {
     }
 
     @Test
-    void checkProductInWishlist_ShouldReturnTrue() {
+    void checkProductInWishlist_ShouldReturnOkWhenProductExists() {
         String clientId = "8a3e5b2c-1d4f-6a7b-9c8d-0e1f2a3b4c5d";
         String productId = "PRD-002-BB4E5F6G";
         when(wishlistService.isProductInWishlist(clientId, productId)).thenReturn(true);
 
-        ResponseEntity<Boolean> response = wishlistController.checkProductInWishlist(clientId, productId);
+        ResponseEntity<Void> response = wishlistController.checkProductInWishlist(clientId, productId);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(Boolean.TRUE, response.getBody());
         verify(wishlistService, times(1)).isProductInWishlist(clientId, productId);
     }
 
     @Test
-    void checkProductInWishlist_ShouldReturnFalse() {
+    void checkProductInWishlist_ShouldReturnNotFoundWhenProductDoesNotExist() {
         String clientId = "8a3e5b2c-1d4f-6a7b-9c8d-0e1f2a3b4c5d";
         String productId = "PRD-021-UU7V8W9X";
         when(wishlistService.isProductInWishlist(clientId, productId)).thenReturn(false);
 
-        ResponseEntity<Boolean> response = wishlistController.checkProductInWishlist(clientId, productId);
+        ResponseEntity<Void> response = wishlistController.checkProductInWishlist(clientId, productId);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotEquals(Boolean.TRUE, response.getBody());
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         verify(wishlistService, times(1)).isProductInWishlist(clientId, productId);
     }
 }
