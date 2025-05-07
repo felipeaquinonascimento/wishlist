@@ -140,7 +140,7 @@ minikube stop
 minikube delete
 ```
 
-## Decisões Arquiteturais
+## 🧰 Decisões Arquiteturais
 
 ### Frameworks e Tecnologias
 - **Spring Boot**: Escolhido pela produtividade e ecossistema robusto

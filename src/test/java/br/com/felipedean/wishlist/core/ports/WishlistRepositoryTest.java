@@ -34,7 +34,7 @@ class WishlistRepositoryTest {
     void findByClientId_ShouldReturnOptionalWishlist() {
         String clientId = "8a3e5b2c-1d4f-6a7b-9c8d-0e1f2a3b4c5d";
         Wishlist expectedWishlist = new Wishlist(clientId);
-        expectedWishlist.addProduct("produto1");
+        expectedWishlist.addProduct("PRD-001-AA1B2C3D");
 
         when(mongoTemplate.findOne(any(Query.class), eq(Wishlist.class)))
                 .thenReturn(expectedWishlist);
